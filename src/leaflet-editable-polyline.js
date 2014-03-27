@@ -482,9 +482,10 @@ L.Polyline.polylineEditor = L.Polyline.extend({
                     if(line1) that._map.removeLayer(line1);
                     if(line2) that._map.removeLayer(line2);
                     console.log('STOPPED');
-                    if(event.target != that._map) {
-                        that._map.fire('click', event);
-                    }
+                    // Causes a Leaflet exception on every drag -RM 20140326
+                    // if(event.target != that._map) {
+                    //     that._map.fire('click', event);
+                    // }
                 }
             };
 
