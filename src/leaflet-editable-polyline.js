@@ -1,4 +1,4 @@
-L.Polyline.polylineEditor = L.Polyline.extend({
+L.Polyline.polylineEditor = L.Polygon.extend({
     _prepareMapIfNeeded: function() {
         var that = this;
 
@@ -206,7 +206,7 @@ L.Polyline.polylineEditor = L.Polyline.extend({
                     var marker = polyline._markers[markerNo];
                     if(found < that._options.maxMarkers) {
                         that._setMarkerVisible(marker, bounds.contains(marker.getLatLng()));
-                        that._setMarkerVisible(marker.newPointMarker, markerNo > 0 && bounds.contains(marker.getLatLng()));
+                        that._setMarkerVisible(marker.newPointMarker, bounds.contains(marker.getLatLng()));
                     } else {
                         that._setMarkerVisible(marker, false);
                         that._setMarkerVisible(marker.newPointMarker, false);
@@ -287,8 +287,8 @@ L.Polyline.polylineEditor = L.Polyline.extend({
             marker.newPointMarker = null;
             marker.on('dragstart', function(event) {
                 var pointNo = that._getPointNo(event.target);
-                var previousPoint = pointNo && pointNo > 0 ? that._markers[pointNo - 1].getLatLng() : null;
-                var nextPoint = pointNo < that._markers.length - 1 ? that._markers[pointNo + 1].getLatLng() : null;
+                var previousPoint = that._getPrevMarker(pointNo).getLatLng();
+                var nextPoint = that._getNextMarker(pointNo).getLatLng();
                 that._setupDragLines(marker, previousPoint, nextPoint);
                 that._hideAll(marker);
             });
@@ -322,14 +322,14 @@ L.Polyline.polylineEditor = L.Polyline.extend({
                 }
             });
 
-            var previousPoint = points[pointNo == 0 ? pointNo : pointNo - 1];
+            var previousPoint = points[pointNo == 0 ? points.length - 1 : pointNo - 1];
             var newPointMarker = L.marker([(latLng.lat + previousPoint.lat) / 2.,
                                            (latLng.lng + previousPoint.lng) / 2.],
                                           {draggable: true, icon: this._options.newPointIcon});
             marker.newPointMarker = newPointMarker;
             newPointMarker.on('dragstart', function(event) {
                 var pointNo = that._getPointNo(event.target);
-                var previousPoint = that._markers[pointNo - 1].getLatLng();
+                var previousPoint = that._getPrevMarker(pointNo).getLatLng();
                 var nextPoint = that._markers[pointNo].getLatLng();
                 that._setupDragLines(marker.newPointMarker, previousPoint, nextPoint);
 
@@ -425,9 +425,9 @@ L.Polyline.polylineEditor = L.Polyline.extend({
             if(pointNo < 0)
                 return;
 
-            var previousMarker = pointNo == 0 ? null : that._markers[pointNo - 1];
+            var previousMarker = that._getPrevMarker(pointNo);
             var marker = that._markers[pointNo];
-            var nextMarker = pointNo < that._markers.length - 1 ? that._markers[pointNo + 1] : null;
+            var nextMarker = that._getNextMarker(pointNo);
             if(marker && previousMarker) {
                 marker.newPointMarker.setLatLng([(previousMarker.getLatLng().lat + marker.getLatLng().lat) / 2.,
                                                  (previousMarker.getLatLng().lng + marker.getLatLng().lng) / 2.]);
@@ -448,6 +448,26 @@ L.Polyline.polylineEditor = L.Polyline.extend({
                 }
             }
             return -1;
+        };
+
+        /**
+         * Get previous marker, handling edge case.
+         */
+        this._getPrevMarker = function(markerNo) {
+            var lastIndex = this._markers.length - 1,
+                prevMarkerNo = markerNo == 0 ? lastIndex : markerNo - 1,
+                prevMarker = this._markers[prevMarkerNo];
+            return prevMarker;
+        };
+
+        /**
+         * Get next marker, handling edge case.
+         */
+        this._getNextMarker = function(markerNo) {
+            var lastIndex = this._markers.length - 1,
+                nextMarkerNo = markerNo < lastIndex ? markerNo + 1 : 0,
+                nextMarker = this._markers[nextMarkerNo];
+            return nextMarker;
         };
 
         /**
